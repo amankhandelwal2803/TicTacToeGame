@@ -27,6 +27,11 @@ public class ConsoleView {
         }
     }
 
+    public int getBoardSize() {
+        System.out.print("Enter board size (e.g., 3 for 3x3): ");
+        return Integer.parseInt(scanner.nextLine());
+    }
+
     public Pair<Integer, Integer> getNextMove(Player player) {
         System.out.println("Player: " + player.getName() + " Enter row,column: ");
         String input = scanner.nextLine();

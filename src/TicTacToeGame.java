@@ -20,9 +20,11 @@ public class TicTacToeGame {
     }
 
     public String startGame() {
-        Board board = new Board(3);
-        WinningStrategy strategy = new DefaultWinningStrategy();
         ConsoleView view = new ConsoleView();
+        int size = view.getBoardSize();
+
+        Board board = new Board(size);
+        WinningStrategy strategy = new DefaultWinningStrategy();
 
         Deque<Player> players = new LinkedList<>();
         players.add(new Player("P1", PlayingPieceFactory.createPiece(PieceType.X)));
