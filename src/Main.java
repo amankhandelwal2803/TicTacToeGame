@@ -1,7 +1,6 @@
 public class Main {
     public static void main(String[] args) {
-
-        TicTacToeGame ticTacToeGame = new TicTacToeGame();
-        System.out.println("Game Winner: " + ticTacToeGame.startGame());
+        String result = TicTacToeGame.getInstance().startGame();
+        System.out.println("Game Result: " + result);
     }
 }

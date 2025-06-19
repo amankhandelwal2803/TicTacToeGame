@@ -1,4 +1,7 @@
+import factory.PlayingPieceFactory;
 import model.*;
+import strategy.DefaultWinningStrategy;
+import strategy.WinningStrategy;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -6,111 +9,82 @@ import java.util.List;
 import java.util.Scanner;
 
 public class TicTacToeGame {
-
     Deque<Player> players;
     Board board;
+    WinningStrategy winningStrategy;
 
-    public TicTacToeGame() {
+    private TicTacToeGame() {
         initGame();
     }
 
+    private static class Holder {
+        private static final TicTacToeGame instance = new TicTacToeGame();
+    }
+
+    public static TicTacToeGame getInstance() {
+        return Holder.instance;
+    }
+
     public void initGame() {
-
         players = new LinkedList<>();
-        PlayingPieceX playingPieceX = new PlayingPieceX();
-        Player p1 = new Player("P1", playingPieceX);
-
-        PlayingPieceO playingPieceO = new PlayingPieceO();
-        Player p2 = new Player("P2", playingPieceO);
+        Player p1 = new Player("P1", PlayingPieceFactory.createPiece(PieceType.X));
+        Player p2 = new Player("P2", PlayingPieceFactory.createPiece(PieceType.O));
 
         players.add(p1);
         players.add(p2);
 
         board = new Board(3);
+        winningStrategy = new DefaultWinningStrategy();
     }
 
     public String startGame() {
-
         boolean noWinner = true;
-        while(noWinner) {
+        Scanner sc = new Scanner(System.in);
 
-            // Takeout the player whose turn is
-            Player playerTurn = players.removeFirst();
+        while (noWinner) {
+            Player currentPlayer = players.removeFirst();
+            printBoard();
 
-            // print the board
-            board.printBoard();
-
-            // get the free spaces in the board
             List<Pair<Integer, Integer>> freeSpaces = board.getFreeCells();
-            if(freeSpaces.isEmpty()) { // no free space left
-                noWinner = false;
+            if (freeSpaces.isEmpty()) {
+                return "Tie";
+            }
+
+            System.out.println("Player: " + currentPlayer.getName() + " Enter row,column: ");
+            String[] parts = sc.nextLine().split(",");
+            int row = Integer.parseInt(parts[0]);
+            int col = Integer.parseInt(parts[1]);
+
+            boolean added = board.addPiece(row, col, currentPlayer.getPlayingPiece());
+            if (!added) {
+                System.out.println("Invalid move. Try again.");
+                players.addFirst(currentPlayer);
                 continue;
             }
 
-            // read the user input
-            System.out.println("Player: " + playerTurn.getName() + " Enter row,column: ");
-            Scanner sc = new Scanner(System.in);
-            String s = sc.nextLine();
-            String[] values = s.split(",");
-            int row = Integer.parseInt(values[0]);
-            int col = Integer.parseInt(values[1]);
+            players.addLast(currentPlayer);
 
-            // place the piece
-            boolean pieceAddedSuccessfully = board.addPiece(row, col, playerTurn.getPlayingPiece());
-            if(!pieceAddedSuccessfully) {
-                // player cannot add piece here
-                System.out.println("Incorrect position, try again");
-                players.addFirst(playerTurn);
-                continue;
-            }
-
-            //put the player in the list back
-            players.addLast(playerTurn);
-
-            boolean winner = checkForWinner(row, col, playerTurn.getPlayingPiece().pieceType);
-            if(winner) {
-                return playerTurn.getName();
+            boolean won = winningStrategy.checkWinner(board, row, col, currentPlayer.getPlayingPiece().pieceType);
+            if (won) {
+                return currentPlayer.getName();
             }
         }
 
         return "Tie";
     }
 
-    public boolean checkForWinner(int row, int col, PieceType pieceType) {
-
-        boolean rowMatch = true;
-        boolean colMatch = true;
-        boolean diagonalMatch = true;
-        boolean antiDiagonalMatch = true;
-
-        // check in row
-        for(int i = 0; i < board.getSize(); i++) {
-            if(board.getBoard()[row][i] == null || board.getBoard()[row][i].pieceType != pieceType) {
-                rowMatch = false;
+    private void printBoard() {
+        PlayingPiece[][] matrix = board.getBoard();
+        for (int i = 0; i < board.getSize(); i++) {
+            for (int j = 0; j < board.getSize(); j++) {
+                if (matrix[i][j] != null) {
+                    System.out.print(matrix[i][j].pieceType.name() + "   ");
+                } else {
+                    System.out.print("    ");
+                }
+                System.out.print("| ");
             }
+            System.out.println();
         }
-
-        // check in col
-        for(int i = 0; i < board.getSize(); i++) {
-            if(board.getBoard()[i][col] == null || board.getBoard()[i][col].pieceType != pieceType) {
-                colMatch = false;
-            }
-        }
-
-        // check diagonals
-        for(int i = 0, j = 0; i < board.getSize(); i++, j++) {
-            if(board.getBoard()[i][j] == null || board.getBoard()[i][j].pieceType != pieceType) {
-                diagonalMatch = false;
-            }
-        }
-
-        // check anti-diagonals
-        for(int i = 0, j = board.getSize() - 1; i < board.getSize(); i++, j--) {
-            if(board.getBoard()[i][j] == null || board.getBoard()[i][j].pieceType != pieceType) {
-                antiDiagonalMatch = false;
-            }
-        }
-
-        return rowMatch || colMatch || diagonalMatch || antiDiagonalMatch;
     }
 }
